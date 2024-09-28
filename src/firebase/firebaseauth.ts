@@ -1,101 +1,65 @@
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-} from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { saveUser } from './firebasefirestore';
 import { app } from "./firebaseconfig";
-import { saveUserInfo } from "./firebasefirestore";
-import { userSaveType } from "@/types/types";
 
 export const auth = getAuth(app);
-export const provider = new GoogleAuthProvider();
 
-export function signInUser(email: string, password: string) {
-  signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      const { email, phoneNumber, uid } = user;
+export function signupWithEmailPassword(email: string, password: string, rollNum: string, studentName: string) {
+    // console.log(email, password, rollNum, studentName, 'inside func')
 
-      const userToBeSaved: userSaveType = {
-        email,
-        phoneNumber,
-        uid,
-      };
-      saveUserInfo(userToBeSaved);
-      console.log(user);
-    })
-    .catch((error) => {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      console.log(errorCode, errorMessage);
-    });
+    createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            // Signed up 
+            const { email, uid } = userCredential.user;
+            console.log(email, uid, rollNum, studentName, 'user created successfully.');
+            saveUser({ email: email as string, uid, rollNum, studentName });
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.error(errorMessage , errorCode);
+            // ..
+        });
 }
 
-export function signUpUser(email: string, password: string) {
-  createUserWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      const { email, phoneNumber, uid } = user;
 
-      const userToBeSaved: userSaveType = {
-        email,
-        phoneNumber,
-        uid,
-      };
-      saveUserInfo(userToBeSaved);
-      console.log(user);
-    })
-    .catch((error) => {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      console.log(errorCode, errorMessage);
-    });
+export function loginWithEmailPassword(email: string, password: string) {
+    signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            // Signed in 
+            const { email, uid } = userCredential.user;
+            console.log(email, uid, 'user LOGGED IN successfully.', userCredential);
+            // ...
+        })
+        .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.error(errorMessage , errorCode);
+        });
 }
 
-export function signinwithgoogle() {
-  signInWithPopup(auth, provider)
-    .then((result) => {
-      // This gives you a Google Access Token. You can use it to access the Google API.
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential?.accessToken;
-      // The signed-in user info.
-      const user = result.user;
-      // IdP data available using getAdditionalUserInfo(result)
-      const { email, phoneNumber, uid } = user;
 
-      const userToBeSaved: userSaveType = {
-        email,
-        phoneNumber,
-        uid,
-      };
-      saveUserInfo(userToBeSaved);
-      console.log("user created with google", token, user);
 
-      // ...
-    })
-    .catch((error) => {
-      // Handle Errors here.
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      // The email of the user's account used.
-      const email = error.customData.email;
-      // The AuthCredential type that was used.
-      const credential = GoogleAuthProvider.credentialFromError(error);
-      console.log(errorCode, errorMessage, email, credential);
 
-      // ...
-    });
-}
 
-export function logout() {
-  signOut(auth)
-    .then(() => {
-      console.log("Sign-out successful");
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

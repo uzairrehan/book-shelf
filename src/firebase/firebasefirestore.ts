@@ -1,102 +1,87 @@
 import {
-  getFirestore,
-  doc,
-  setDoc,
-  collection,
   addDoc,
-  getDoc,
-  query,
+  collection,
+  doc,
   getDocs,
+  getFirestore,
+  query,
+  setDoc,
   where,
 } from "firebase/firestore";
-
 import { app } from "./firebaseconfig";
-import { todoDataType, userSaveType } from "@/types/types";
 import { auth } from "./firebaseauth";
 
-//  this called instance
-const db = getFirestore(app);
+export const db = getFirestore(app);
 
-export async function saveUserInfo({ email, phoneNumber, uid }: userSaveType) {
+type UserType = {
+  email: string;
+  rollNum: string;
+  studentName: string;
+  uid: string;
+};
+
+export async function saveUser(user: UserType) {
+  //   const docRef = doc(db, "collectionName", "docID");
+  //   await setDoc(docRef, user);
+
+  //   const collectionRef = collection(db, "collectionName");
+  //   await addDoc(collectionRef, user);
+
   try {
-    const where = doc(db, "user", uid);
-    const what = { email, phoneNumber, uid };
-    await setDoc(where, what);
-    console.log("user saved : ", what);
-  } catch (error) {
-    console.log("cant save : ", error);
+    const docRef = doc(db, "users", user.uid);
+    await setDoc(docRef, user);
+  } catch (e) {
+    console.log(e);
   }
 }
 
-export async function saveTodo({ todo, uid, email, completed }: todoDataType) {
+export async function saveTodo(todo: string) {
+  // collection(db, "collectionName")
+  // addDoc("where", "what");
+
+  const uid = auth.currentUser?.uid;
+  const newTodo = { todo, uid };
+
   try {
-    const where = collection(db, "todo");
-    const what = { todo, uid, email, completed };
-    await addDoc(where, what);
-    console.log("saved", what);
+    const collectionRef = collection(db, "todos");
+    await addDoc(collectionRef, newTodo);
   } catch (error) {
-    console.log("cant save : ", error);
+    console.log(error);
   }
 }
 
-export async function fetchKnownTodo(UID: string) {
-  const reference = doc(db, "todo", UID);
-  const data = await getDoc(reference);
-  if (data.exists()) {
-    console.log("here is the todo of ", data.id, data.data());
-  } else {
-    console.log("nothing to show");
-  }
+export async function fetchTodos() {
+  // const docRef = doc(db, "collectionName", "docID");
+  // await getDoc(docRef);
+
+  // const collectionRef = collection(db, "collectionName");
+  // query(where, condition)
+  // await getDocs(collectionRef);
+
+  const collectionRef = collection(db, "todos");
+  const currentUserUID = auth.currentUser?.uid;
+
+  const condition = where("uid", "==", currentUserUID);
+  const q = query(collectionRef, condition);
+
+  const allTodosSnapshot = await getDocs(q);
+
+  const allTodos = allTodosSnapshot.docs.map((todoSnapshot) => {
+    const todo = todoSnapshot.data();
+    todo.id = todoSnapshot.id;
+    return todo
+  })
+  return allTodos;
+
+
+
+
+  // allTodosSnapshot.forEach((todo) => {
+  //   const todoData = todo.data();
+  //   todoData.id = todo.id;
+  //   console.log(todoData);
+  // });
+
+
+
 }
-
-export async function getTodoList(email: string) {
-  if (email) {
-    const reference = collection(db, "todo");
-    const wher = where("email", "==", email);
-    const q = query(reference, wher);
-    const todoList = await getDocs(q);
-    todoList.forEach((data) => {
-      if (data.exists()) {
-        console.log(data.data());
-      } else {
-        console.log("can't find");
-      }
-    });
-  }
-}
-
-
-
-
-export async function realTimeUpdate() {
-    if (auth.currentUser) {
-      const reference =  collection(db, "todo")
-      const userUID = auth.currentUser?.uid
-      const condition = where("uid" , "==" , userUID)
-      const q =  query(reference, condition)
-      const allTodosSnapshot = await getDocs (q)
-      const allTodos = allTodosSnapshot.docs.map((rawdata)=>{
-        const data = rawdata.data()
-        data.id = rawdata.id
-        return data
-      })  
-      return allTodos
-    }
-    
-}
-
-
-
-
-
-
-
-
-
-
-
-// collection(instance, "collectionName")
-// addDoc("where", "what");
-
-// let docRef = doc(instance, "collectionName", "docId")
-// await setDoc("where", "what");
